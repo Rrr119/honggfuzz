@@ -56,6 +56,17 @@ honggfuzz -i input_dir -- <honggfuzz_dir>/qemu_mode/honggfuzz-qemu/x86_64-linux-
   honggfuzz -i input_dir --linux_perf_branch -- /usr/bin/djpeg ___FILE___
 ```
 
+Hardware coverage can be fused with the default software instrumentation, and
+Intel PT can be pointed at the kernel instead of userspace (for driver fuzzing):
+```shell
+  # Fused software + Intel PT feedback (shared coverage bitmap)
+  honggfuzz -i input_dir -z --linux_perf_ipt_block -- ./instrumented_target ___FILE___
+  # Kernel/driver coverage: trace ring-0 only (needs root + relaxed perf_event_paranoid)
+  sudo honggfuzz -i input_dir --linux_perf_ipt_block --linux_perf_kernel_only -- ./kernel_harness ___FILE___
+```
+See [FeedbackDrivenFuzzing.md](FeedbackDrivenFuzzing.md) and
+[benchmarks/kernel_pt](../benchmarks/kernel_pt/README.md) for details.
+
 ## Persistent-mode (```-P```). _Note: it will be auto-detected_ ##
 
 ```shell

@@ -62,6 +62,27 @@ For advanced examples (Apache, OpenSSL, BIND, etc.), check the `examples/` direc
 
 See [USAGE.md](docs/USAGE.md) for detailed options.
 
+## Kernel / Driver Fuzzing
+
+Beyond userspace binaries, honggfuzz can guide fuzzing with **Intel Processor
+Trace coverage of kernel code**. Combine `--linux_perf_ipt_block` with
+`--linux_perf_kernel_only` to trace ring-0 basic blocks reached when a harness
+exercises a driver through syscalls/ioctls (see
+[`examples/linux_kernel_ip`](examples/linux_kernel_ip)):
+
+```bash
+sudo ./honggfuzz -i corpus --linux_perf_ipt_block --linux_perf_kernel_only \
+    -- ./kernel_harness ___FILE___
+```
+
+Hardware and software coverage share one feedback bitmap, so `-z` (software
+instrumentation) and `--linux_perf_ipt_block` can run together to fuse both
+signals. A ready-made benchmark comparing the `soft`/`ipt`/`bts`/`fused`/
+`kernel` backends lives in
+[`benchmarks/kernel_pt`](benchmarks/kernel_pt/README.md). See
+[FeedbackDrivenFuzzing.md](docs/FeedbackDrivenFuzzing.md) for prerequisites
+(`libipt`, `perf_event_paranoid`, `kptr_restrict`).
+
 ## Trophies
 
 Honggfuzz has discovered major security vulnerabilities in critical software.

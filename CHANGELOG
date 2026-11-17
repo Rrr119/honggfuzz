@@ -1,3 +1,19 @@
+unreleased
+       - linux/pt+linux/perf: harden Intel PT for kernel/driver fuzzing
+       - explicitly select the PT OS (ring-0) vs USR (ring-3) trace scope and
+         enable TOPA/TRACEEN for --linux_perf_kernel_only
+       - don't apply the userspace --linux_perf_ignore_above cutoff to kernel
+         IPs in the PT/BTS decoders when kernel-only coverage is selected
+       - add a targeted diagnostic when perf_event_open is denied by
+         perf_event_paranoid / missing capabilities
+       - linux/pt: include <string.h> so the libipt build passes under -Werror
+       - feedback: keep separate Intel PT (iptCnt) and BTS (btsCnt) coverage
+         counters while still fusing both into the shared coverage bitmap
+       - benchmarks/kernel_pt: add a coverage-backend benchmark
+         (soft/ipt/bts/fused/kernel) with CSV/Markdown summarization
+       - docs: document kernel Intel PT fuzzing, software+hardware feedback
+         fusion and the benchmark suite
+
 2023-09-21 - Version 2.6
        - Pastis patch
        - env NO_COLOR support

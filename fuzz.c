@@ -236,6 +236,8 @@ static void fuzz_perfFeedback(run_t* run) {
             run->global->feedback.hwCnts.cpuBranchCnt = run->hwCnts.cpuBranchCnt;
         }
         run->global->feedback.hwCnts.bbCnt += run->hwCnts.newBBCnt;
+        run->global->feedback.hwCnts.iptCnt += run->hwCnts.newIptCnt;
+        run->global->feedback.hwCnts.btsCnt += run->hwCnts.newBtsCnt;
         run->global->feedback.hwCnts.softCntPc += softNewPC;
         run->global->feedback.hwCnts.softCntEdge += softNewEdge;
         run->global->feedback.hwCnts.softCntCmp += softNewCmp;
@@ -491,6 +493,8 @@ static void fuzz_fuzzLoop(run_t* run) {
     run->hwCnts.cpuBranchCnt = 0;
     run->hwCnts.bbCnt        = 0;
     run->hwCnts.newBBCnt     = 0;
+    run->hwCnts.newIptCnt    = 0;
+    run->hwCnts.newBtsCnt    = 0;
 
     if (!fuzz_fetchInput(run)) {
         if (run->global->cfg.minimize && fuzz_getState(run->global) == _HF_STATE_DYNAMIC_MINIMIZE) {
@@ -528,6 +532,8 @@ static void fuzz_fuzzLoopSocket(run_t* run) {
     run->hwCnts.cpuBranchCnt = 0;
     run->hwCnts.bbCnt        = 0;
     run->hwCnts.newBBCnt     = 0;
+    run->hwCnts.newIptCnt    = 0;
+    run->hwCnts.newBtsCnt    = 0;
 
     LOG_I("------------------------------------------------------");
 

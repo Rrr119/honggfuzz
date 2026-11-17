@@ -73,8 +73,11 @@ __attribute__((hot)) static inline void arch_perfBtsCount(run_t* run) {
             LOG_D("Adding branch %#018" PRIx64 " - %#018" PRIx64, br->from, br->to);
             continue;
         }
-        if (br->from >= run->global->arch_linux.dynamicCutOffAddr ||
-            br->to >= run->global->arch_linux.dynamicCutOffAddr) {
+        /* See the matching comment in linux/pt.c: the userspace cutoff must
+         * not be applied to kernel IPs when kernel-only coverage is used. */
+        if (!run->global->arch_linux.kernelOnly &&
+            (br->from >= run->global->arch_linux.dynamicCutOffAddr ||
+                br->to >= run->global->arch_linux.dynamicCutOffAddr)) {
             continue;
         }
 
@@ -84,6 +87,7 @@ __attribute__((hot)) static inline void arch_perfBtsCount(run_t* run) {
         register bool prev = ATOMIC_BITMAP_SET(run->global->feedback.covFeedbackMap->bbMapPc, pos);
         if (!prev) {
             run->hwCnts.newBBCnt++;
+            run->hwCnts.newBtsCnt++;
         }
     }
 }
@@ -163,8 +167,18 @@ static bool arch_perfCreate(run_t* run, pid_t pid, dynFileMethod_t method, int* 
         break;
     case _HF_DYNFILE_IPT_BLOCK:
         LOG_D("Using: (Intel PT) type=%" PRIu32 " for pid=%d", perfIntelPtPerfType, (int)pid);
-        pe.type   = perfIntelPtPerfType;
-        pe.config = RTIT_CTL_DISRETC;
+        pe.type = perfIntelPtPerfType;
+        /*
+         * DISRETC keeps the packet stream compact. The OS/USR trace scope is
+         * selected explicitly instead of relying on the kernel default, so that
+         * kernel-only runs trace ring-0 while userspace runs stay in ring-3.
+         */
+        pe.config = RTIT_CTL_TRACEEN | RTIT_CTL_TOPA | RTIT_CTL_DISRETC;
+        if (run->global->arch_linux.kernelOnly) {
+            pe.config |= RTIT_CTL_OS;
+        } else {
+            pe.config |= RTIT_CTL_USR;
+        }
         break;
     default:
         LOG_E("Unknown perf mode: '%d' for pid=%d", method, (int)pid);
@@ -178,6 +192,17 @@ static bool arch_perfCreate(run_t* run, pid_t pid, dynFileMethod_t method, int* 
     *perfFd = perf_event_open(&pe, pid, -1, -1, PERF_FLAG_FD_CLOEXEC);
     if (*perfFd == -1) {
         PLOG_E("perf_event_open() failed");
+        if (errno == EACCES || errno == EPERM) {
+            if (run->global->arch_linux.kernelOnly) {
+                LOG_E("Kernel tracing was denied. Try: "
+                      "'echo 1 > /proc/sys/kernel/perf_event_paranoid' (or run as root), "
+                      "'echo 0 > /proc/sys/kernel/kptr_restrict', and make sure the CPU "
+                      "supports Intel PT");
+            } else {
+                LOG_E("Perf tracing was denied. Try lowering "
+                      "'/proc/sys/kernel/perf_event_paranoid' or run as root");
+            }
+        }
         return false;
     }
 

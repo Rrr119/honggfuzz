@@ -405,11 +405,11 @@ void display_display(honggfuzz_t* hfuzz) {
     }
     if (hfuzz->feedback.dynFileMethod & _HF_DYNFILE_BTS_EDGE) {
         display_put(" bts: " ESC_BOLD "%" _HF_NONMON_SEP PRIu64 ESC_RESET,
-            ATOMIC_GET(hfuzz->feedback.hwCnts.bbCnt));
+            ATOMIC_GET(hfuzz->feedback.hwCnts.btsCnt));
     }
     if (hfuzz->feedback.dynFileMethod & _HF_DYNFILE_IPT_BLOCK) {
         display_put(" ipt: " ESC_BOLD "%" _HF_NONMON_SEP PRIu64 ESC_RESET,
-            ATOMIC_GET(hfuzz->feedback.hwCnts.bbCnt));
+            ATOMIC_GET(hfuzz->feedback.hwCnts.iptCnt));
     }
     if (hfuzz->feedback.dynFileMethod & _HF_DYNFILE_SOFT) {
         uint64_t softCntPc   = ATOMIC_GET(hfuzz->feedback.hwCnts.softCntPc);

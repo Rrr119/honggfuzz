@@ -128,6 +128,12 @@ typedef struct {
     uint64_t cpuBranchCnt;
     uint64_t bbCnt;
     uint64_t newBBCnt;
+    /* Per-backend hardware coverage counters, kept separate so the fused
+     * feedback can still attribute new blocks to Intel PT vs. Intel BTS */
+    uint64_t iptCnt;
+    uint64_t newIptCnt;
+    uint64_t btsCnt;
+    uint64_t newBtsCnt;
     uint64_t softCntPc;
     uint64_t softCntEdge;
     uint64_t softCntCmp;

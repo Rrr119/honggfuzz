@@ -71,6 +71,54 @@ This mode will utilize Interl's PT (Process Trace) subsystem, which should be wa
 $ <honggfuzz_dir>/honggfuzz --linux_perf_ipt_block -i input_corpus -- /usr/bin/xmllint -format ___FILE___
 ```
 
+## Fusing software and hardware feedback ##
+
+Software instrumentation (`-z`) and the hardware backends (Intel PT, Intel BTS)
+are not mutually exclusive. Every backend records the addresses/edges it
+observes into the same shared coverage bitmap (`bbMapPc`), so they can be
+enabled at the same time and their feedback is fused automatically: an input
+is kept whenever *any* backend observes new coverage.
+
+```shell
+# Software instrumentation + Intel PT in a single session
+$ <honggfuzz_dir>/honggfuzz -z --linux_perf_ipt_block -i input_corpus -- ./instrumented_target ___FILE___
+```
+
+The status line keeps the per-backend totals separate even though the bitmap
+is shared: `edge/pc/cmp` report the software counters while `ipt:`/`bts:`
+report the unique blocks contributed by the hardware backend. The
+[benchmark suite](../benchmarks/kernel_pt/README.md) quantifies the coverage
+gain (and throughput cost) of the fused mode against each backend alone.
+
+## Kernel / driver coverage with Intel PT (--linux_perf_kernel_only) ##
+
+Compile-time instrumentation only covers the fuzzed userspace binary, so it
+cannot see code executed inside a kernel driver reached through syscalls or
+ioctls. The `--linux_perf_kernel_only` switch flips the Intel PT (and BTS)
+perf event to ring-0: it sets `exclude_user`, enables the PT `OS` trace scope
+and records unique kernel basic blocks instead of userspace ones.
+
+```shell
+# Fuzz the kernel TUN driver via the bundled userspace harness
+$ sudo <honggfuzz_dir>/honggfuzz --linux_perf_ipt_block --linux_perf_kernel_only \
+      -i input_corpus -- ./examples/linux_kernel_ip/tun ___FILE___
+```
+
+Kernel-only tracing has additional requirements:
+
+  * an Intel CPU exposing the PT PMU (`/sys/bus/event_source/devices/intel_pt/type`)
+  * honggfuzz built against `libipt` (installed via `libipt-dev`)
+  * sufficient privileges - run as root or with `CAP_PERFMON`, and relax the
+    perf policy with `echo 1 > /proc/sys/kernel/perf_event_paranoid`
+  * `echo 0 > /proc/sys/kernel/kptr_restrict` if you want kernel symbols to
+    resolve in reports
+
+In this mode the userspace `--linux_perf_ignore_above` cutoff is intentionally
+not applied to traced IPs, because kernel addresses are high canonical
+addresses; ring-0/user isolation is handled by the perf event itself. The
+kernel backend can also be combined with `-z`, in which case software feedback
+covers the harness while PT covers the driver it drives.
+
 ## Instruction counting (--linux_perf_instr) ##
 
 This mode tries to maximize the number of instructions taken during each process iteration. The counters will be taken from the Linux perf subsystems. Intel, AMD and even other CPU architectures are supported for this mode.

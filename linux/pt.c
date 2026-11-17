@@ -26,6 +26,7 @@
 #include <inttypes.h>
 #include <linux/perf_event.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "libhfcommon/common.h"
 #include "libhfcommon/log.h"
@@ -127,7 +128,15 @@ __attribute__((hot)) inline static void perf_ptAnalyzePkt(
         return;
     }
 
-    if (ip >= run->global->arch_linux.dynamicCutOffAddr) {
+    /*
+     * dynamicCutOffAddr (--linux_perf_ignore_above) is meant to discard
+     * userspace IPs above a given threshold. In kernel-only mode every traced
+     * IP is a kernel address (typically >= 0xffff800000000000), so applying
+     * the cutoff here would discard all kernel coverage. Kernel IPs are
+     * already isolated at the perf-event level via exclude_user instead.
+     */
+    if (!run->global->arch_linux.kernelOnly &&
+        ip >= run->global->arch_linux.dynamicCutOffAddr) {
         return;
     }
 
@@ -135,6 +144,7 @@ __attribute__((hot)) inline static void perf_ptAnalyzePkt(
     register bool prev = ATOMIC_BITMAP_SET(run->global->feedback.covFeedbackMap->bbMapPc, ip);
     if (!prev) {
         run->hwCnts.newBBCnt++;
+        run->hwCnts.newIptCnt++;
     }
 }
 

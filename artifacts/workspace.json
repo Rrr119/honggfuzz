@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid24402",
+  "B": "/home/dev/feedback/uid24402",
+  "sha": "940b958dfeb6f9131fd846cae31fcc0fe996ae98",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "google",
+    "repo": "honggfuzz",
+    "sha": "940b958dfeb6f9131fd846cae31fcc0fe996ae98"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "honggfuzz",
+    "cloneUrl": "https://github.com/Rrr119/honggfuzz.git"
+  },
+  "at": "2026-11-17T21:48:16.179Z"
+}
